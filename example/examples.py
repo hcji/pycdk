@@ -26,6 +26,9 @@ getMolTotalFormalCharge(mol)
 getMolTotalNegativeFormalCharge(mol)
 getMolTotalPositiveFormalCharge(mol)
 
+# get fingerprint
+fingerprint = getFingerprint(mol, fp_type="standard", size=1024, depth=6)
+
 # formula from/to string
 string = 'C2H5OH'
 formula = FormulaFromString(string)
@@ -41,6 +44,15 @@ isotope_array = IsotopeFromFormula(formula, minI=0.01)
 
 # cdk.isotope from array
 isotope = IsotopeFromArray(isotope_array)
+
+# generate formula from mass
+mass = 18.03383
+window = 0.01
+atom_list = {'C': [0, 20], 'H': [0, 20], 'O': [0, 20], 'P': [0, 20], 'S': [0, 20]}
+formulas = generate_formula(mass, window, atom_list)
+
+# check if formula is valid
+valid = check_formula('C5H16O')
 
 # compare isotope pattern
 string1 = 'C5H16O'

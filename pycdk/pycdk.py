@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from jpype import isJVMStarted, startJVM, getDefaultJVMPath, JPackage
+from jpype import isJVMStarted, startJVM, getDefaultJVMPath, JPackage, JArray
 # import pycdk
 
 if not isJVMStarted():
@@ -132,4 +132,70 @@ def IsotopeSimilarity(isotope_array_1, isotope_array_2, tolerance_ppm=10):
     output = function.compare(isotope_1, isotope_2)
     return output
     
+def getFingerprint(mol, fp_type="standard", size=1024, depth=6):
+    if fp_type == 'maccs':
+        nbit = 166
+    elif fp_type == 'estate':
+        nbit = 79
+    elif fp_type == 'pubchem':
+        nbit = 881
+    elif fp_type == 'klekota-roth':
+        nbit = 4860
+    else:
+        nbit = size
+    _fingerprinters = {"standard":cdk.fingerprint.Fingerprinter(size, depth)
+                            , "extended":cdk.fingerprint.ExtendedFingerprinter(size, depth)
+                            , "graph":cdk.fingerprint.GraphOnlyFingerprinter(size, depth)
+                            , "maccs":cdk.fingerprint.MACCSFingerprinter()
+                            , "pubchem":cdk.fingerprint.PubchemFingerprinter(cdk.silent.SilentChemObjectBuilder.getInstance())
+                            , "estate":cdk.fingerprint.EStateFingerprinter()
+                            , "hybridization":cdk.fingerprint.HybridizationFingerprinter(size, depth)
+                            , "lingo":cdk.fingerprint.LingoFingerprinter(depth)
+                            , "klekota-roth":cdk.fingerprint.KlekotaRothFingerprinter()
+                            , "shortestpath":cdk.fingerprint.ShortestPathFingerprinter(size)
+                            , "signature": cdk.fingerprint.SignatureFingerprinter(depth)
+                            , "circular": cdk.fingerprint.CircularFingerprinter()
+                            }
+    if fp_type in _fingerprinters:
+        fingerprinter = _fingerprinters[fp_type]
+    else:
+        raise IOError('invalid fingerprint type')
+    fp = fingerprinter.getBitFingerprint(mol).asBitSet()
+    bits = []
+    idx = fp.nextSetBit(0)
+    while idx >= 0:
+        bits.append(idx)
+        idx = fp.nextSetBit(idx + 1)
+    return {'nbit': nbit, 'bits':bits}
     
+def generate_formula(mass, window=0.01, atom_list = {'C': [0, 20], 'H': [0, 20], 'O': [0, 20], 'N': [0, 20], 'P': [0, 20], 'S': [0, 20]}, astring=True):
+    ifac = cdk.config.Isotopes.getInstance()
+    mfrange = cdk.formula.MolecularFormulaRange()
+    builder = cdk.formula.MolecularFormula().getBuilder()
+    generator = cdk.formula.MolecularFormulaGenerator
+    for atom, (minimum, maximum) in atom_list.items():
+        element = ifac.getMajorIsotope(atom)
+        mfrange.addIsotope(element, minimum, maximum)
+    formula = generator(builder, mass-window, mass+window, mfrange)
+    formula = formula.getAllFormulas()
+    formula = formula.molecularFormulas()
+    if astring:
+        formula = [FormulaToString(f) for f in formula]
+    return formula
+
+def check_formula(formula, NitrogenRuleCheck=True, RDBERuleCheck=True):
+    valid = 1
+    if type(formula) == str:
+        formula = FormulaFromString(formula)
+    if NitrogenRuleCheck:
+        checker = cdk.formula.rules.NitrogenRule()
+        valid *= checker.validate(formula)
+    if RDBERuleCheck:
+        checker = cdk.formula.rules.RDBERule()
+        valid *= checker.validate(formula)
+    if valid > 0:
+        return True
+    else:
+        return False
+
+
