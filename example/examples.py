@@ -26,8 +26,13 @@ getMolTotalFormalCharge(mol)
 getMolTotalNegativeFormalCharge(mol)
 getMolTotalPositiveFormalCharge(mol)
 
-# get fingerprint
-fingerprint = getFingerprint(mol, fp_type="standard", size=1024, depth=6)
+# get fingerprint and compare similarity
+mol1 = MolFromSmiles('CCCO')
+mol2 = MolFromSmiles('COCC')
+fingerprint = getFingerprint(mol1, fp_type="standard", size=1024, depth=6, transform=True)
+fingerprint1 = getFingerprint(mol1, fp_type="standard", size=1024, depth=6, transform=False)
+fingerprint2 = getFingerprint(mol2, fp_type="standard", size=1024, depth=6, transform=False)
+TanimotoSimilarity(fingerprint1, fingerprint2)
 
 # formula from/to string
 string = 'C2H5OH'

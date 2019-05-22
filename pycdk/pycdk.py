@@ -122,7 +122,7 @@ def IsotopeFromArray(array):
 def IsotopeToArray(isotopes):
     isotopes = isotopes.getIsotopes()
     output = [(i.getMass(), i.getIntensity()) for i in isotopes]   
-    return output
+    return np.array(output)
 
 def IsotopeSimilarity(isotope_array_1, isotope_array_2, tolerance_ppm=10):
     isotope_1 = IsotopeFromArray(isotope_array_1)
@@ -132,7 +132,7 @@ def IsotopeSimilarity(isotope_array_1, isotope_array_2, tolerance_ppm=10):
     output = function.compare(isotope_1, isotope_2)
     return output
     
-def getFingerprint(mol, fp_type="standard", size=1024, depth=6):
+def getFingerprint(mol, fp_type="standard", size=1024, depth=6, transform=True):
     if fp_type == 'maccs':
         nbit = 166
     elif fp_type == 'estate':
@@ -160,13 +160,21 @@ def getFingerprint(mol, fp_type="standard", size=1024, depth=6):
         fingerprinter = _fingerprinters[fp_type]
     else:
         raise IOError('invalid fingerprint type')
-    fp = fingerprinter.getBitFingerprint(mol).asBitSet()
-    bits = []
-    idx = fp.nextSetBit(0)
-    while idx >= 0:
-        bits.append(idx)
-        idx = fp.nextSetBit(idx + 1)
-    return {'nbit': nbit, 'bits':bits}
+    fp = fingerprinter.getBitFingerprint(mol)
+    if transform:
+        fp = fp.asBitSet()
+        bits = []
+        idx = fp.nextSetBit(0)
+        while idx >= 0:
+            bits.append(idx)
+            idx = fp.nextSetBit(idx + 1)
+        return {'nbit': nbit, 'bits':bits}
+    else:
+        return fp
+    
+def TanimotoSimilarity(fingerprint_1, fingerprint_2):
+    similarity = cdk.similarity.Tanimoto.calculate(fingerprint_1, fingerprint_2)
+    return similarity
     
 def generate_formula(mass, window=0.01, atom_list = {'C': [0, 20], 'H': [0, 20], 'O': [0, 20], 'N': [0, 20], 'P': [0, 20], 'S': [0, 20]}, astring=True):
     ifac = cdk.config.Isotopes.getInstance()
