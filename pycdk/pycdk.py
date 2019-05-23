@@ -1,8 +1,9 @@
 import os
 import numpy as np
-from jpype import isJVMStarted, startJVM, getDefaultJVMPath, JPackage, JArray
+from jpype import java, isJVMStarted, startJVM, getDefaultJVMPath, JPackage
 # import pycdk
 
+################################## Start JVM #########################################
 if not isJVMStarted():
     # cdk_path = os.path.join(pycdk.__path__[0], 'cdk-2.2.jar')
     cdk_path = os.path.join('pycdk/cdk-2.2.jar')
@@ -11,6 +12,7 @@ if not isJVMStarted():
 else:
     raise OSError ('JVM is already started, please shut down')
 
+############################### Format Conversion #####################################
 def MolFromSmiles(smi):
     function = cdk.smiles.SmilesParser(cdk.DefaultChemObjectBuilder.getInstance())
     try:
@@ -41,6 +43,23 @@ def MolToInchiKey(mol):
     inchi = function.getInChIGenerator(mol)
     return inchi.getInchiKey()
 
+def MolToMOPAC(mol):
+    output = java.io.StringWriter()
+    writer = cdk.io.program.Mopac7Writer(output)
+    writer.write(mol)
+    writer.close()
+    output = output.toString()
+    return output
+
+def MolToSDF(mol):
+    output = java.io.StringWriter()
+    writer = cdk.io.SDFWriter(output)
+    writer.write(mol)
+    writer.close()
+    output = output.toString()
+    return output 
+
+############################# Molecular Properties ##################################
 def MolToFormula(mol, string=True):
     function = cdk.tools.manipulator.MolecularFormulaManipulator
     gen = function.getMolecularFormula(mol)
@@ -76,6 +95,7 @@ def getMolTotalPositiveFormalCharge(mol):
     PositiveFormalCharge = function.getTotalPositiveFormalCharge(mol)
     return PositiveFormalCharge
 
+############################# Formula and Isotope ##################################
 def FormulaFromString(string):
     builder = cdk.formula.MolecularFormula().getBuilder()
     formula = cdk.tools.manipulator.MolecularFormulaManipulator.getMolecularFormula(string, builder)
@@ -131,7 +151,38 @@ def IsotopeSimilarity(isotope_array_1, isotope_array_2, tolerance_ppm=10):
     function.seTolerance(tolerance_ppm)
     output = function.compare(isotope_1, isotope_2)
     return output
-    
+
+def generate_formula(mass, window=0.01, atom_list = {'C': [0, 20], 'H': [0, 20], 'O': [0, 20], 'N': [0, 20], 'P': [0, 20], 'S': [0, 20]}, astring=True):
+    ifac = cdk.config.Isotopes.getInstance()
+    mfrange = cdk.formula.MolecularFormulaRange()
+    builder = cdk.formula.MolecularFormula().getBuilder()
+    generator = cdk.formula.MolecularFormulaGenerator
+    for atom, (minimum, maximum) in atom_list.items():
+        element = ifac.getMajorIsotope(atom)
+        mfrange.addIsotope(element, minimum, maximum)
+    formula = generator(builder, mass-window, mass+window, mfrange)
+    formula = formula.getAllFormulas()
+    formula = formula.molecularFormulas()
+    if astring:
+        formula = [FormulaToString(f) for f in formula]
+    return formula
+
+def check_formula(formula, NitrogenRuleCheck=True, RDBERuleCheck=True):
+    valid = 1
+    if type(formula) == str:
+        formula = FormulaFromString(formula)
+    if NitrogenRuleCheck:
+        checker = cdk.formula.rules.NitrogenRule()
+        valid *= checker.validate(formula)
+    if RDBERuleCheck:
+        checker = cdk.formula.rules.RDBERule()
+        valid *= checker.validate(formula)
+    if valid > 0:
+        return True
+    else:
+        return False
+
+############################### Fingerprint ########################################
 def getFingerprint(mol, fp_type="standard", size=1024, depth=6, transform=True):
     if fp_type == 'maccs':
         nbit = 166
@@ -175,35 +226,49 @@ def getFingerprint(mol, fp_type="standard", size=1024, depth=6, transform=True):
 def TanimotoSimilarity(fingerprint_1, fingerprint_2):
     similarity = cdk.similarity.Tanimoto.calculate(fingerprint_1, fingerprint_2)
     return similarity
-    
-def generate_formula(mass, window=0.01, atom_list = {'C': [0, 20], 'H': [0, 20], 'O': [0, 20], 'N': [0, 20], 'P': [0, 20], 'S': [0, 20]}, astring=True):
-    ifac = cdk.config.Isotopes.getInstance()
-    mfrange = cdk.formula.MolecularFormulaRange()
-    builder = cdk.formula.MolecularFormula().getBuilder()
-    generator = cdk.formula.MolecularFormulaGenerator
-    for atom, (minimum, maximum) in atom_list.items():
-        element = ifac.getMajorIsotope(atom)
-        mfrange.addIsotope(element, minimum, maximum)
-    formula = generator(builder, mass-window, mass+window, mfrange)
-    formula = formula.getAllFormulas()
-    formula = formula.molecularFormulas()
-    if astring:
-        formula = [FormulaToString(f) for f in formula]
-    return formula
 
-def check_formula(formula, NitrogenRuleCheck=True, RDBERuleCheck=True):
-    valid = 1
-    if type(formula) == str:
-        formula = FormulaFromString(formula)
-    if NitrogenRuleCheck:
-        checker = cdk.formula.rules.NitrogenRule()
-        valid *= checker.validate(formula)
-    if RDBERuleCheck:
-        checker = cdk.formula.rules.RDBERule()
-        valid *= checker.validate(formula)
-    if valid > 0:
-        return True
+################################# Fragmenter #########################################   
+def generateFragments(mol, method='MurckoFragmenter', minFragSize=6, singleFrameworkOnly=True, asSmiles=True):
+    if method == 'MurckoFragmenter':
+        function = cdk.fragment.MurckoFragmenter(singleFrameworkOnly, minFragSize)
+    elif method == 'ExhaustiveFragmenter':
+        function = cdk.fragment.ExhaustiveFragmenter(minFragSize)
     else:
-        return False
+        raise IOError('Invalid fragmentation method')
+    function.generateFragments(mol)
+    if asSmiles:
+        fragments = function.getFragments()
+    else:
+        fragments = function.getFragmentsAsContainers()
+    return np.array(fragments)
 
+################################# Descriptor #########################################
+def getMolecularDescriptorCategories():
+    function = cdk.qsar.DescriptorEngine(cdk.qsar.IMolecularDescriptor, cdk.silent.SilentChemObjectBuilder.getInstance())
+    return list(function.getAvailableDictionaryClasses())
 
+def getMolecularDescriptor(mol, species='all'):
+    function = cdk.qsar.DescriptorEngine(cdk.qsar.IMolecularDescriptor, cdk.silent.SilentChemObjectBuilder.getInstance())
+    descriptors = list(function.getDescriptorInstances())
+    specifications = list(function.getDescriptorSpecifications())
+    categories = []
+    for s in specifications:
+        try:
+            t = list(function.getDictionaryClass(s))
+        except:
+            t = ['constitutionalDescriptor']
+        categories.append(t)
+    Descriptors = {}
+    if species == 'all':
+        species = set(getMolecularDescriptorCategories())
+    for i, descriptor in enumerate(descriptors):
+        if set(categories[i]).intersection(species) == 0:
+            continue
+        try:
+            name = list(descriptor.getDescriptorNames())[0]
+            value = descriptor.calculate(mol).getValue().toString()
+            value = value.split(',')
+            value = [float(v) for v in value]
+        except:
+            continue
+        Descriptors[name] = value

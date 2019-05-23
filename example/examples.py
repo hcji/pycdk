@@ -8,7 +8,7 @@ Created on Wed May 22 10:03:22 2019
 # from pycdk import *
 
 # read mol from inchi/smiles
-smi = 'CCCO'
+smi = 'c1ccc(cc1)CN(c2cc(ccc2[N+](=O)[O-])c3c(nc(nc3CC)N)N)C'
 inchi = 'InChI=1S/C3H8O/c1-2-3-4/h4H,2-3H2,1H3'
 mol = MolFromSmiles(smi)
 mol = MolFromInchi(inchi)
@@ -17,6 +17,10 @@ mol = MolFromInchi(inchi)
 smi = MolToSmiles(mol)
 inchi = MolToInchi(mol)
 inchikey = MolToInchiKey(mol)
+
+# generate sdf/mopac
+mopac = MolToMOPAC(mol)
+sdf = MolToSDF(mol)
 
 # get informations from mol
 MolToFormula(mol)
