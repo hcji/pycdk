@@ -6,7 +6,7 @@ setup(name='pycdk',
       license='AGPLv3',
       author='Ji Hongchao',
       author_email='ji.hongchao@foxmail.com',
-      url='https://github.com/hcji/PyFingerprint',
+      url='https://github.com/hcji/pycdk',
 	  include_package_data = True,
       packages=find_packages()
      )
