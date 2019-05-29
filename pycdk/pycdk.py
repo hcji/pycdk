@@ -196,6 +196,7 @@ def getFingerprint(mol, fp_type="standard", size=1024, depth=6, transform=True):
         nbit = size
     _fingerprinters = {"standard":cdk.fingerprint.Fingerprinter(size, depth)
                             , "extended":cdk.fingerprint.ExtendedFingerprinter(size, depth)
+                            , "substructure": cdk.fingerprint.SubstructureFingerprinter()
                             , "graph":cdk.fingerprint.GraphOnlyFingerprinter(size, depth)
                             , "maccs":cdk.fingerprint.MACCSFingerprinter()
                             , "pubchem":cdk.fingerprint.PubchemFingerprinter(cdk.silent.SilentChemObjectBuilder.getInstance())
