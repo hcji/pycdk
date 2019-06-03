@@ -105,6 +105,39 @@ def FormulaToString(formula):
     string = cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
     return string
 
+def add_formula(string1, string2):
+    formula1 = FormulaFromString(string1)
+    formula2 = FormulaFromString(string2)
+    added = formula1.add(formula2)
+    return FormulaToString(added)
+
+def subtract_formula(string1, string2):
+    parser1 = parser_formula(string1)
+    parser2 = parser_formula(string2)
+    for k in parser2.keys():
+        if k in parser1.keys():
+            parser1[k] -= parser2[k]
+        else:
+            raise ValueError ('forula2 is part of formula1')
+        if parser1[k] < 0:
+            raise ValueError ('forula2 is part of formula1')
+    string = ''
+    for k in parser1.keys():
+        string += k
+        string += str(parser1[k])
+    return FormulaToString(FormulaFromString(string)) 
+
+def parser_formula(string):
+    formula = FormulaFromString(string)
+    iters = formula.isotopes()
+    size = 	formula.getIsotopeCount()
+    isotopes = iters.iterator()
+    output = {}
+    for i in range(size):
+        isotope = isotopes.next()
+        output[isotope.getSymbol()] = formula.getIsotopeCount(isotope)
+    return output        
+
 def getFormulaExactMass(string):
     formula = FormulaFromString(string)
     function = cdk.tools.manipulator.MolecularFormulaManipulator
