@@ -150,6 +150,12 @@ def getFormulaNaturalMass(string):
     NaturalMass = function.getNaturalExactMass(formula)
     return NaturalMass
 
+def getFormulaDBE(string):
+    formula = FormulaFromString(string)
+    function = cdk.tools.manipulator.MolecularFormulaManipulator
+    DBE = function.	getDBE(formula)
+    return DBE
+
 def IsotopeFromString(string, minI=0.01):
     formula = FormulaFromString(string)
     return IsotopeFromFormula(formula, minI)
@@ -214,6 +220,20 @@ def check_formula(formula, NitrogenRuleCheck=True, RDBERuleCheck=True):
         return True
     else:
         return False
+    
+def generate_valid_formula(mass, window, atom_list, maxDBE, NitrogenRuleCheck=True):
+    all_formula = generate_formula(mass, window, atom_list)
+    output = []
+    for f in all_formula:
+        DBE = getFormulaDBE(f)
+        if (DBE < 0) or (DBE > maxDBE):
+            continue
+        if NitrogenRuleCheck:
+            check = check_formula(f, NitrogenRuleCheck=True, RDBERuleCheck=False)
+            if not check:
+                continue
+        output.append(f)
+    return output
 
 ############################### Fingerprint ########################################
 def getFingerprint(mol, fp_type="standard", size=1024, depth=6, transform=True):
