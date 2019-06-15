@@ -118,9 +118,11 @@ def subtract_formula(string1, string2):
         if k in parser1.keys():
             parser1[k] -= parser2[k]
         else:
-            raise ValueError ('forula2 is part of formula1')
+            print('forula2 is part of formula1')
+            return string1
         if parser1[k] < 0:
-            raise ValueError ('forula2 is part of formula1')
+            print('forula2 is part of formula1')
+            return string1
     string = ''
     for k in parser1.keys():
         string += k
