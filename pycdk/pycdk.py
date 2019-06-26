@@ -113,6 +113,41 @@ def FormulaToString(formula):
     string = cdk.tools.manipulator.MolecularFormulaManipulator.getString(formula)
     return string
 
+def add_formula(string1, string2):
+    formula1 = FormulaFromString(string1)
+    formula2 = FormulaFromString(string2)
+    added = formula1.add(formula2)
+    return FormulaToString(added)
+
+def subtract_formula(string1, string2):
+    parser1 = parser_formula(string1)
+    parser2 = parser_formula(string2)
+    for k in parser2.keys():
+        if k in parser1.keys():
+            parser1[k] -= parser2[k]
+        else:
+            print('forula2 is part of formula1')
+            return string1
+        if parser1[k] < 0:
+            print('forula2 is part of formula1')
+            return string1
+    string = ''
+    for k in parser1.keys():
+        string += k
+        string += str(parser1[k])
+    return FormulaToString(FormulaFromString(string)) 
+
+def parser_formula(string):
+    formula = FormulaFromString(string)
+    iters = formula.isotopes()
+    size = 	formula.getIsotopeCount()
+    isotopes = iters.iterator()
+    output = {}
+    for i in range(size):
+        isotope = isotopes.next()
+        output[isotope.getSymbol()] = formula.getIsotopeCount(isotope)
+    return output        
+
 def getFormulaExactMass(string):
     formula = FormulaFromString(string)
     function = cdk.tools.manipulator.MolecularFormulaManipulator
@@ -124,6 +159,12 @@ def getFormulaNaturalMass(string):
     function = cdk.tools.manipulator.MolecularFormulaManipulator
     NaturalMass = function.getNaturalExactMass(formula)
     return NaturalMass
+
+def getFormulaDBE(string):
+    formula = FormulaFromString(string)
+    function = cdk.tools.manipulator.MolecularFormulaManipulator
+    DBE = function.	getDBE(formula)
+    return DBE
 
 def IsotopeFromString(string, minI=0.01):
     formula = FormulaFromString(string)
@@ -189,6 +230,20 @@ def check_formula(formula, NitrogenRuleCheck=True, RDBERuleCheck=True):
         return True
     else:
         return False
+    
+def generate_valid_formula(mass, window, atom_list, maxDBE, NitrogenRuleCheck=True):
+    all_formula = generate_formula(mass, window, atom_list)
+    output = []
+    for f in all_formula:
+        DBE = getFormulaDBE(f)
+        if (DBE < 0) or (DBE > maxDBE):
+            continue
+        if NitrogenRuleCheck:
+            check = check_formula(f, NitrogenRuleCheck=True, RDBERuleCheck=False)
+            if not check:
+                continue
+        output.append(f)
+    return output
 
 ############################### Fingerprint ########################################
 def getFingerprint(mol, fp_type="standard", size=1024, depth=6, transform=True):
