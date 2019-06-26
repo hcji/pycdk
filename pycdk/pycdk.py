@@ -28,6 +28,14 @@ def MolFromInchi(inchi):
     mol = s.getAtomContainer()
     return mol
 
+def MolFromFile(sdf):
+    file = java.io.File(sdf)
+    reader = cdk.io.ReaderFactory().createReader(java.io.FileReader(file))
+    builder = cdk.DefaultChemObjectBuilder.getInstance()
+    content = reader.read(builder.newInstance(cdk.interfaces.IChemFile))
+    mols = cdk.tools.manipulator.ChemFileManipulator.getAllAtomContainers(content)
+    return mols    
+
 def MolToSmiles(mol):
     function = cdk.smiles.SmilesGenerator(cdk.smiles.SmiFlavor.Isomeric)
     smi = function.create(mol)
@@ -273,3 +281,4 @@ def getMolecularDescriptor(mol, species='all'):
         except:
             continue
         Descriptors[name] = value
+    return Descriptors
