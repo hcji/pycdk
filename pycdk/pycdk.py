@@ -323,17 +323,20 @@ def getMolecularDescriptor(mol, species='all'):
             t = ['constitutionalDescriptor']
         categories.append(t)
     Descriptors = {}
+    keys = ['Fsp3', 'nSmallRings', 'tpsaEfficiency', 'Zagreb', 'XLogP', 'WPATH', 'Wlambda1.unity', 'WTPT-1', 'MW', 'VAdjMat', 'VABC', 'TopoPSA', 'LipinskiFailures', 'nRotB', 'topoShape', 'PetitjeanNumber', 'MOMI-X', 'MDEC-11', 'MLogP', 'nAtomLAC', 'LOBMAX', 'nAtomP', 'nAtomLC', 'khs.sLi', 'Kier1', 'HybRatio', 'nHBDon', 'nHBAcc', 'GRAV-1', 'fragC', 'FMF', 'ECCEN', 'PPSA-1', 'SP-0', 'SPC-4', 'SC-3', 'SCH-3', 'C1SP1', 'bpol', 'nB', 'BCUTw-1l', 'nBase', 'ATSp1', 'ATSm1', 'ATSc1', 'nAtom', 'nAromBond', 'naAromAtom', 'apol', 'ALogP', 'nAcid']
+    lens = [1,11,1,1,1,2,17,5,1,1,1,1,1,1,2,1,7,19,1,1,2,1,1,79,3,1,1,1,9,1,1,1,29,16,6,8,10,9,1,1,6,1,5,5,5,1,1,1,1,3,1]
     if species == 'all':
         species = set(getMolecularDescriptorCategories())
     for i, descriptor in enumerate(descriptors):
         if set(categories[i]).intersection(species) == 0:
             continue
+        name = list(descriptor.getDescriptorNames())[0]
         try:
-            name = list(descriptor.getDescriptorNames())[0]
             value = descriptor.calculate(mol).getValue().toString()
             value = value.split(',')
             value = [float(v) for v in value]
         except:
+            value = np.repeat(np.nan, lens[keys.index(name)])
             continue
         Descriptors[name] = value
     return Descriptors
