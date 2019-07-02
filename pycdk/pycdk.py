@@ -337,6 +337,5 @@ def getMolecularDescriptor(mol, species='all'):
             value = [float(v) for v in value]
         except:
             value = np.repeat(np.nan, lens[keys.index(name)])
-            continue
         Descriptors[name] = value
     return Descriptors
