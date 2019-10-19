@@ -70,3 +70,7 @@ isotope_array_1 = IsotopeFromString(string1, minI=0.001)
 isotope_array_2 = IsotopeFromString(string2, minI=0.001)
 similarity1 = IsotopeSimilarity(isotope_array_1, isotope_array_2, 10)
 similarity2 = IsotopeSimilarity(isotope_array_1, isotope_array_2, 3.4)
+
+# generate cdk fingerprint and molecular descriptor
+fp = getFingerprint(mol)
+des = getMolecularDescriptor(mol)
