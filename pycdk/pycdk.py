@@ -1,4 +1,5 @@
 import os
+import jpype
 import numpy as np
 from jpype import java, isJVMStarted, startJVM, getDefaultJVMPath, JPackage
 import pycdk
@@ -7,6 +8,7 @@ import pycdk
 if not isJVMStarted():
     cdk_path = os.path.join(pycdk.__path__[0], 'cdk-2.2.jar')
     # cdk_path = os.path.join('pycdk/cdk-2.2.jar')
+    jpype.addClassPath(cdk_path)
     startJVM(getDefaultJVMPath(), "-ea", "-Djava.class.path=%s" % cdk_path)
     cdk = JPackage('org').openscience.cdk
 else:
